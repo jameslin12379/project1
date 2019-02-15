@@ -2,11 +2,11 @@
 const loadMore = document.querySelector('#loadMore');
 const container = document.querySelector('#container');
 let url = window.location.pathname;
-let count = document.getElementsByClassName('container-item').length;
+let count = document.getElementsByClassName('list-item').length;
 let total = 70;
 let skip = count;
 let loading = false;
-const API_URL = window.location.hostname.includes("dev") ? `https://www.tiv67.com.dev/api/topics` : `https://www.tiv67.com/api/topics`;
+const API_URL = window.location.hostname.includes("dev") ? `https://www.post67.com.dev/api/topics` : `https://www.post67.com/api/topics`;
 
 document.addEventListener('scroll', () => {
     const rect = loadMore.getBoundingClientRect();
@@ -17,9 +17,8 @@ document.addEventListener('scroll', () => {
                 result = result.results;
                 result.forEach(topic => {
                     const div = document.createElement('div');
-                    div.classList.add("flex");
                     div.classList.add("mb-50");
-                    div.classList.add("container-item");
+                    div.classList.add("list-item");
                     const link = document.createElement('a');
                     link.setAttribute("href", `/topics/${topic.id}`);
                     link.classList.add("mr-15");
@@ -32,12 +31,13 @@ document.addEventListener('scroll', () => {
                     link2.setAttribute("href", `/topics/${topic.id}`);
                     link2.innerText = topic.name;
                     link2.classList.add("bold");
+                    link2.classList.add("fs-16");
                     div.appendChild(link);
                     link.appendChild(img);
                     div.appendChild(link2);
                     container.appendChild(div);
                 });
-                count = document.getElementsByClassName('container-item').length;
+                count = document.getElementsByClassName('list-item').length;
                 skip = count;
                 loading = false;
             });

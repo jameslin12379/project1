@@ -142,7 +142,7 @@ router.get('/', function(req, res, next) {
     if (!req.isAuthenticated()){
         res.render('home/index', {
             req: req,
-            title: 'Tiv67',
+            title: 'Post67',
             alert: req.flash('alert')
         });
     }
@@ -157,7 +157,7 @@ router.get('/', function(req, res, next) {
         if (results[0].status === 0){
             res.render('home/index', {
                 req: req,
-                title: 'Tiv67',
+                title: 'Post67',
                 alert: req.flash('alert')
             });
         }
@@ -173,12 +173,11 @@ router.get('/', function(req, res, next) {
                 res.render('home/indexfeed', {
                     req: req,
                     results: results,
-                    title: 'Tiv67',
+                    title: 'Post67',
                     alert: req.flash('alert')
                 });
             }
         );
-
     });
 });
 
@@ -1244,7 +1243,7 @@ router.get('/api/topics', function(req, res){
 // get topic information, get 10 images of the topic, if current user is logged in, check if he has
 // followed topic or not if yes pass unfollow to button value else pass follow to button value
 router.get('/topics/:id', isResource, function(req, res){
-    connection.query('SELECT id, name, description, imageurl, datecreated FROM `topic` WHERE id = ?; SELECT p.id, p.name, p.description, p.imageurl, p.videourl, p.datecreated, p.userid, p.topicid, p.posttype, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10; SELECT count(*) as postscount ' +
+    connection.query('SELECT id, name, description, imageurl, datecreated FROM `topic` WHERE id = ?; SELECT p.id, p.name, p.description, p.datecreated, p.userid, p.topicid, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10; SELECT count(*) as postscount ' +
         'FROM post WHERE topicid = ?;SELECT count(*) as followerscount FROM topicfollowing WHERE followed = ?',
         [req.params.id, req.params.id, req.params.id, req.params.id],
         function (error, results, fields) {
@@ -1270,6 +1269,7 @@ router.get('/topics/:id', isResource, function(req, res){
                         });
                     });
             } else {
+                console.log(results);
                 res.render('topics/show', {
                     req: req,
                     results: results,
@@ -1282,7 +1282,7 @@ router.get('/topics/:id', isResource, function(req, res){
 });
 
 router.get('/api/topics/:id', isResource, function(req, res){
-    connection.query('SELECT p.id, p.name, p.description, p.imageurl, p.videourl, p.datecreated, p.userid, p.topicid, p.posttype, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10 OFFSET ?;', [req.params.id, Number(req.query.skip)], function (error, results, fields) {
+    connection.query('SELECT p.id, p.name, p.description, p.datecreated, p.userid, p.topicid, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10 OFFSET ?;', [req.params.id, Number(req.query.skip)], function (error, results, fields) {
         // error will be an Error if one occurred during the query
         // results will contain the results of the query
         // fields will contain information about the returned results fields (if any)

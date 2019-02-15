@@ -9,7 +9,7 @@ const URL = window.location.origin + '/topicfollowings';
 const followerscount = document.getElementById('followerscount');
 const button = document.getElementById('followunfollow');
 button.addEventListener('click', function(event){
-    if (button.innerText === 'Follow') {
+    if (button.innerText === 'FOLLOW') {
         followTopic();
     } else {
         unfollowTopic();
@@ -17,8 +17,6 @@ button.addEventListener('click', function(event){
 })
 
 function followTopic(){
-    // const url = document.getElementById('currentid').getAttribute('href');
-    // const userid = url.substring(url.lastIndexOf('/') + 1);
     const topicid = window.location.href.substring(window.location.href.lastIndexOf('/') + 1);
     fetch(URL, {
         method: 'POST',
@@ -26,14 +24,12 @@ function followTopic(){
         body: JSON.stringify({topicid: topicid})
     }).then(response => response.json())
         .then(result => {
-            button.innerText = 'Unfollow';
+            button.innerText = 'UNFOLLOW';
             followerscount.innerText = (Number(followerscount.innerText) + 1) + '';
         });
 }
 
 function unfollowTopic(){
-    // const url = document.getElementById('currentid').getAttribute('href');
-    // const userid = url.substring(url.lastIndexOf('/') + 1);
     const topicid = window.location.href.substring(window.location.href.lastIndexOf('/') + 1);
     fetch(URL, {
         method: 'DELETE',
@@ -41,7 +37,7 @@ function unfollowTopic(){
         body: JSON.stringify({topicid: topicid})
     }).then(response => response.json())
         .then(result => {
-            button.innerText = 'Follow';
+            button.innerText = 'FOLLOW';
             followerscount.innerText = (Number(followerscount.innerText) - 1) + '';
 
         });
