@@ -1,0 +1,11 @@
+.flex {
+    display: flex;
+}
+
+.jc-center {
+    justify-content: center;
+}
+
+.mb-10 {
+    margin-bottom: 10px!important;
+}
