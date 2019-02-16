@@ -22,6 +22,8 @@ let commentscount = document.getElementById('commentscount');
 
 commentform.addEventListener('submit', (e)=> {
     e.preventDefault();
+    emptyerror.classList.add('hidden');
+    lengtherror.classList.add('hidden');
     let description = commentformtextarea.value;
     fetch(commentformurl, {
         method: 'POST',
@@ -29,6 +31,7 @@ commentform.addEventListener('submit', (e)=> {
         body: JSON.stringify({description: description, postid: commentformpostid})
     }).then(response => response.json()).then(result => {
             if (!result.status) {
+                console.log('w');
                 for (let i = 0; i < result.errors.length; i++) {
                     if (result.errors[i].msg === "Empty description.") {
                         emptyerror.classList.remove('hidden');
@@ -46,6 +49,7 @@ commentform.addEventListener('submit', (e)=> {
                 const div = document.createElement('div');
                 div.classList.add("flex");
                 div.classList.add("mb-50");
+                div.classList.add("list-item");
                 const div2 = document.createElement('div');
                 div2.classList.add("mr-15");
                 div.appendChild(div2);
@@ -65,16 +69,19 @@ commentform.addEventListener('submit', (e)=> {
                 l2.setAttribute("href", `/users/${result.comment[0].userid}`);
                 l2.innerText = result.comment[0].username;
                 l2.classList.add("bold");
+                l2.classList.add("fs-16");
                 div4.appendChild(l2);
                 div3.appendChild(div4);
                 const div5 = document.createElement('div');
                 l3 = document.createElement('a');
                 l3.setAttribute("href", `/comments/${result.comment[0].id}`);
                 l3.innerText = result.comment[0].description;
+                l3.classList.add("fs-16");
                 div5.appendChild(l3);
                 div3.appendChild(div5);
-                const div6 = document.createElement('p');
+                const div6 = document.createElement('div');
                 div6.innerText = moment(result.comment[0].datecreated).format('LLL');
+                div6.classList.add("fs-16");
                 div3.appendChild(div6);
                 container.insertBefore(div, container.firstChild);
                 }

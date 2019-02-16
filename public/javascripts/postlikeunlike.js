@@ -9,7 +9,7 @@ const URL = window.location.origin + '/likes';
 const likescount = document.getElementById('likescount');
 const button = document.getElementById('likeunlike');
 button.addEventListener('click', function(event){
-    if (button.innerText === 'Like') {
+    if (button.classList.contains("op-05")) {
         likePost();
     } else {
         unlikePost();
@@ -26,7 +26,7 @@ function likePost(){
         body: JSON.stringify({postid: postid})
     }).then(response => response.json())
         .then(result => {
-            button.innerText = 'Liked';
+            button.classList.remove("op-05");
             likescount.innerText = (Number(likescount.innerText) + 1) + '';
         });
 }
@@ -41,7 +41,7 @@ function unlikePost(){
         body: JSON.stringify({postid: postid})
     }).then(response => response.json())
         .then(result => {
-            button.innerText = 'Like';
+            button.classList.add("op-05");
             likescount.innerText = (Number(likescount.innerText) - 1) + '';
 
         });

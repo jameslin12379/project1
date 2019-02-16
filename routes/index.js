@@ -641,59 +641,43 @@ router.delete('/userfollowings', isAuthenticated, function(req, res) {
 });
 
 /// POST ROUTES ///
-// GET request for creating a Post. NOTE This must come before routes that display Post (uses id).
-// router.get('/posts/new', isAuthenticated, function(req, res){
-//     res.render('posts/new', {
-//         req: req,
-//         title: 'Post',
-//         errors: req.flash('errors'),
-//         inputs: req.flash('inputs')
-//     });
-// });
-
-router.get('/texts/new', isAuthenticated, function(req, res){
-    res.render('posts/texts/new', {
+/// GET request for creating a Post. NOTE This must come before routes that display Post (uses id). ///
+router.get('/posts/new', isAuthenticated, function(req, res){
+    res.render('posts/new', {
         req: req,
-        title: 'Create text',
+        title: 'Post',
         errors: req.flash('errors'),
         inputs: req.flash('inputs')
     });
 });
 
-router.get('/images/new', isAuthenticated, function(req, res){
-    res.render('posts/images/new', {
-        req: req,
-        title: 'Create image',
-        errors: req.flash('errors'),
-        inputs: req.flash('inputs')
-    });
-});
-
-router.get('/videos/new', isAuthenticated, function(req, res){
-    res.render('posts/videos/new', {
-        req: req,
-        title: 'Create video',
-        errors: req.flash('errors'),
-        inputs: req.flash('inputs')
-    });
-});
-
-// POST request for creating Post.
-router.post('/texts', isAuthenticated, [
+router.post('/posts', isAuthenticated, upload.single('file'), [
         body('name', 'Empty name.').not().isEmpty(),
         body('description', 'Empty description.').not().isEmpty(),
         body('topic', 'Empty topic').not().isEmpty(),
         body('name', 'Name must be between 5-200 characters.').isLength({min:5, max:200}),
-        body('description', 'Description must be between 5-2000 characters.').isLength({min:5, max:2000})
+        body('description', 'Description must be between 5-300 characters.').isLength({min:5, max:300})
     ], (req, res) => {
         const errors = validationResult(req);
         let errorsarray = errors.array();
+        // file is not empty
+        // file size limit (max 30mb)
+        // file type is image
+        // if (req.file.size === 0){
+        //     errorsarray.push({msg: "File cannot be empty."});
+        // }
+        // if (req.file.mimetype.slice(0, 5) !== 'image'){
+        //     errorsarray.push({msg: "File type needs to be image."});
+        // }
+        // if (req.file.size > 30000000){
+        //     errorsarray.push({msg: "File cannot exceed 30MB."});
+        // }
         if (errorsarray.length !== 0) {
             // There are errors. Render form again with sanitized values/errors messages.
             // Error messages can be returned in an array using `errors.array()`.
             req.flash('errors', errorsarray);
             req.flash('inputs', {name: req.body.name, description: req.body.description, topic: req.body.topic});
-            res.redirect('/texts/new');
+            res.redirect('/posts/new');
         }
         else {
             sanitizeBody('name').trim().escape();
@@ -702,141 +686,115 @@ router.post('/texts', isAuthenticated, [
             const name = req.body.name;
             const description = req.body.description;
             const topic = req.body.topic;
-            connection.query('INSERT INTO post (name, description, userid, topicid, posttype) VALUES ' +
-                        '(?, ?, ?, ?, ?)', [name, description, req.user.id, topic, 1], function (error, results, fields) {
-                        // error will be an Error if one occurred during the query
-                        // results will contain the results of the query
-                        // fields will contain information about the returned results fields (if any)
-                        if (error) {
-                            throw error;
-                        }
-                        req.flash('alert', 'Text created.');
-                        res.redirect(`/users/${req.user.id}`);
-                    });
+            connection.query('INSERT INTO post (name, description, userid, topicid) VALUES ' +
+                '(?, ?, ?, ?)', [name, description, req.user.id, topic], function (error, results, fields) {
+                // error will be an Error if one occurred during the query
+                // results will contain the results of the query
+                // fields will contain information about the returned results fields (if any)
+                if (error) {
+                    throw error;
                 }
+                req.flash('alert', 'Post created.');
+                res.redirect(`/users/${req.user.id}`);
             });
-
-router.post('/images', isAuthenticated, upload.single('file'), [
-        body('topic', 'Empty topic').not().isEmpty()
-    ], (req, res) => {
-        const errors = validationResult(req);
-        let errorsarray = errors.array();
-        // file is not empty
-        // file size limit (max 30mb)
-        // file type is image
-        if (req.file.size === 0){
-            errorsarray.push({msg: "File cannot be empty."});
-        }
-        if (req.file.mimetype.slice(0, 5) !== 'image'){
-            errorsarray.push({msg: "File type needs to be image."});
-        }
-        if (req.file.size > 30000000){
-            errorsarray.push({msg: "File cannot exceed 30MB."});
-        }
-        if (errorsarray.length !== 0) {
-            // There are errors. Render form again with sanitized values/errors messages.
-            // Error messages can be returned in an array using `errors.array()`.
-            req.flash('errors', errorsarray);
-            req.flash('inputs', {topic: req.body.topic});
-            res.redirect('/images/new');
-        }
-        else {
-            sanitizeBody('topic').trim().escape();
-            const topic = req.body.topic;
             // upload image to AWS, get imageurl, insert row into DB with title, description, topic, imageurl, currentuserid, and
             // meta data fields for image (size, type, etc...)
             // console.log(req.file);
-            const uploadParams = {
-                Bucket: 'tivappbucket', // pass your bucket name
-                Key: 'images/' + req.file.originalname, // file will be saved as testBucket/contacts.csv
-                Body: req.file.buffer,
-                ContentType: req.file.mimetype
-            };
-            s3.upload (uploadParams, function (err, data) {
-                if (err) {
-                    console.log("Error", err);
-                } if (data) {
-                    connection.query('INSERT INTO post (imageurl, userid, topicid, posttype) VALUES ' +
-                        '(?, ?, ?, ?)', [data.Location, req.user.id, topic, 2], function (error, results, fields) {
-                        // error will be an Error if one occurred during the query
-                        // results will contain the results of the query
-                        // fields will contain information about the returned results fields (if any)
-                        if (error) {
-                            throw error;
-                        }
-                        req.flash('alert', 'Image created.');
-                        res.redirect(`/users/${req.user.id}`);
-                    });
-                    // console.log("Upload Success", data.Location);
-                }
-            });
+            // const uploadParams = {
+            //     Bucket: 'postappbucket', // pass your bucket name
+            //     Key: 'images/' + req.file.originalname, // file will be saved as testBucket/contacts.csv
+            //     Body: req.file.buffer,
+            //     ContentType: req.file.mimetype
+            // };
+            // s3.upload (uploadParams, function (err, data) {
+            //     if (err) {
+            //         console.log("Error", err);
+            //     } if (data) {
+            //         // connection.query('INSERT INTO post (name, description, imageurl, userid, topicid) VALUES ' +
+            //         //     '(?, ?, ?, ?, ?)', [name, description, data.Location, req.user.id, topic], function (error, results, fields) {
+            //         //     // error will be an Error if one occurred during the query
+            //         //     // results will contain the results of the query
+            //         //     // fields will contain information about the returned results fields (if any)
+            //         //     if (error) {
+            //         //         throw error;
+            //         //     }
+            //         //     req.flash('alert', 'Post created.');
+            //         //     res.redirect(`/users/${req.user.id}`);
+            //         // });
+            //         // console.log("Upload Success", data.Location);
+            //     }
+            // });
         }
     }
 );
 
-router.post('/videos', isAuthenticated, upload.single('file'), [
-        body('topic', 'Empty topic').not().isEmpty()
-    ], (req, res) => {
-        const errors = validationResult(req);
-        let errorsarray = errors.array();
-        // file is not empty
-        // file size limit (max 30mb)
-        // file type is image
-        if (req.file.size === 0){
-            errorsarray.push({msg: "File cannot be empty."});
-        }
-        if (req.file.mimetype.slice(0, 5) !== 'video'){
-            errorsarray.push({msg: "File type needs to be video."});
-        }
-        if (req.file.size > 30000000){
-            errorsarray.push({msg: "File cannot exceed 30MB."});
-        }
-        if (errorsarray.length !== 0) {
-            // There are errors. Render form again with sanitized values/errors messages.
-            // Error messages can be returned in an array using `errors.array()`.
-            req.flash('errors', errorsarray);
-            req.flash('inputs', {topic: req.body.topic});
-            res.redirect('/videos/new');
-        }
-        else {
-            sanitizeBody('topic').trim().escape();
-            const topic = req.body.topic;
-            // upload image to AWS, get imageurl, insert row into DB with title, description, topic, imageurl, currentuserid, and
-            // meta data fields for image (size, type, etc...)
-            // console.log(req.file);
-            const uploadParams = {
-                Bucket: 'tivappbucket', // pass your bucket name
-                Key: 'videos/' + req.file.originalname, // file will be saved as testBucket/contacts.csv
-                Body: req.file.buffer,
-                ContentType: req.file.mimetype
-            };
-            s3.upload (uploadParams, function (err, data) {
-                if (err) {
-                    console.log("Error", err);
-                } if (data) {
-                    connection.query('INSERT INTO post (videourl, userid, topicid, posttype) VALUES ' +
-                        '(?, ?, ?, ?)', [data.Location, req.user.id, topic, 3], function (error, results, fields) {
-                        // error will be an Error if one occurred during the query
-                        // results will contain the results of the query
-                        // fields will contain information about the returned results fields (if any)
-                        if (error) {
-                            throw error;
-                        }
-                        req.flash('alert', 'Video created.');
-                        res.redirect(`/users/${req.user.id}`);
-                    });
-                }
-            });
-        }
-    }
-);
+// router.get('/texts/new', isAuthenticated, function(req, res){
+//     res.render('posts/texts/new', {
+//         req: req,
+//         title: 'Create text',
+//         errors: req.flash('errors'),
+//         inputs: req.flash('inputs')
+//     });
+// });
+//
+// router.get('/images/new', isAuthenticated, function(req, res){
+//     res.render('posts/images/new', {
+//         req: req,
+//         title: 'Create image',
+//         errors: req.flash('errors'),
+//         inputs: req.flash('inputs')
+//     });
+// });
+//
+// router.get('/videos/new', isAuthenticated, function(req, res){
+//     res.render('posts/videos/new', {
+//         req: req,
+//         title: 'Create video',
+//         errors: req.flash('errors'),
+//         inputs: req.flash('inputs')
+//     });
+// });
 
-// router.post('/posts', isAuthenticated, upload.single('file'), [
+// POST request for creating Post.
+// router.post('/texts', isAuthenticated, [
 //         body('name', 'Empty name.').not().isEmpty(),
 //         body('description', 'Empty description.').not().isEmpty(),
 //         body('topic', 'Empty topic').not().isEmpty(),
 //         body('name', 'Name must be between 5-200 characters.').isLength({min:5, max:200}),
-//         body('description', 'Description must be between 5-300 characters.').isLength({min:5, max:300})
+//         body('description', 'Description must be between 5-2000 characters.').isLength({min:5, max:2000})
+//     ], (req, res) => {
+//         const errors = validationResult(req);
+//         let errorsarray = errors.array();
+//         if (errorsarray.length !== 0) {
+//             // There are errors. Render form again with sanitized values/errors messages.
+//             // Error messages can be returned in an array using `errors.array()`.
+//             req.flash('errors', errorsarray);
+//             req.flash('inputs', {name: req.body.name, description: req.body.description, topic: req.body.topic});
+//             res.redirect('/texts/new');
+//         }
+//         else {
+//             sanitizeBody('name').trim().escape();
+//             sanitizeBody('description').trim().escape();
+//             sanitizeBody('topic').trim().escape();
+//             const name = req.body.name;
+//             const description = req.body.description;
+//             const topic = req.body.topic;
+//             connection.query('INSERT INTO post (name, description, userid, topicid, posttype) VALUES ' +
+//                         '(?, ?, ?, ?, ?)', [name, description, req.user.id, topic, 1], function (error, results, fields) {
+//                         // error will be an Error if one occurred during the query
+//                         // results will contain the results of the query
+//                         // fields will contain information about the returned results fields (if any)
+//                         if (error) {
+//                             throw error;
+//                         }
+//                         req.flash('alert', 'Text created.');
+//                         res.redirect(`/users/${req.user.id}`);
+//                     });
+//                 }
+//             });
+
+// router.post('/images', isAuthenticated, upload.single('file'), [
+//         body('topic', 'Empty topic').not().isEmpty()
 //     ], (req, res) => {
 //         const errors = validationResult(req);
 //         let errorsarray = errors.array();
@@ -856,21 +814,17 @@ router.post('/videos', isAuthenticated, upload.single('file'), [
 //             // There are errors. Render form again with sanitized values/errors messages.
 //             // Error messages can be returned in an array using `errors.array()`.
 //             req.flash('errors', errorsarray);
-//             req.flash('inputs', {name: req.body.name, description: req.body.description, topic: req.body.topic});
-//             res.redirect('/posts/new');
+//             req.flash('inputs', {topic: req.body.topic});
+//             res.redirect('/images/new');
 //         }
 //         else {
-//             sanitizeBody('name').trim().escape();
-//             sanitizeBody('description').trim().escape();
 //             sanitizeBody('topic').trim().escape();
-//             const name = req.body.name;
-//             const description = req.body.description;
 //             const topic = req.body.topic;
 //             // upload image to AWS, get imageurl, insert row into DB with title, description, topic, imageurl, currentuserid, and
 //             // meta data fields for image (size, type, etc...)
 //             // console.log(req.file);
 //             const uploadParams = {
-//                 Bucket: 'postappbucket', // pass your bucket name
+//                 Bucket: 'tivappbucket', // pass your bucket name
 //                 Key: 'images/' + req.file.originalname, // file will be saved as testBucket/contacts.csv
 //                 Body: req.file.buffer,
 //                 ContentType: req.file.mimetype
@@ -879,18 +833,75 @@ router.post('/videos', isAuthenticated, upload.single('file'), [
 //                 if (err) {
 //                     console.log("Error", err);
 //                 } if (data) {
-//                     connection.query('INSERT INTO post (name, description, imageurl, userid, topicid) VALUES ' +
-//                         '(?, ?, ?, ?, ?)', [name, description, data.Location, req.user.id, topic], function (error, results, fields) {
+//                     connection.query('INSERT INTO post (imageurl, userid, topicid, posttype) VALUES ' +
+//                         '(?, ?, ?, ?)', [data.Location, req.user.id, topic, 2], function (error, results, fields) {
 //                         // error will be an Error if one occurred during the query
 //                         // results will contain the results of the query
 //                         // fields will contain information about the returned results fields (if any)
 //                         if (error) {
 //                             throw error;
 //                         }
-//                         req.flash('alert', 'Post created.');
+//                         req.flash('alert', 'Image created.');
 //                         res.redirect(`/users/${req.user.id}`);
 //                     });
 //                     // console.log("Upload Success", data.Location);
+//                 }
+//             });
+//         }
+//     }
+// );
+//
+// router.post('/videos', isAuthenticated, upload.single('file'), [
+//         body('topic', 'Empty topic').not().isEmpty()
+//     ], (req, res) => {
+//         const errors = validationResult(req);
+//         let errorsarray = errors.array();
+//         // file is not empty
+//         // file size limit (max 30mb)
+//         // file type is image
+//         if (req.file.size === 0){
+//             errorsarray.push({msg: "File cannot be empty."});
+//         }
+//         if (req.file.mimetype.slice(0, 5) !== 'video'){
+//             errorsarray.push({msg: "File type needs to be video."});
+//         }
+//         if (req.file.size > 30000000){
+//             errorsarray.push({msg: "File cannot exceed 30MB."});
+//         }
+//         if (errorsarray.length !== 0) {
+//             // There are errors. Render form again with sanitized values/errors messages.
+//             // Error messages can be returned in an array using `errors.array()`.
+//             req.flash('errors', errorsarray);
+//             req.flash('inputs', {topic: req.body.topic});
+//             res.redirect('/videos/new');
+//         }
+//         else {
+//             sanitizeBody('topic').trim().escape();
+//             const topic = req.body.topic;
+//             // upload image to AWS, get imageurl, insert row into DB with title, description, topic, imageurl, currentuserid, and
+//             // meta data fields for image (size, type, etc...)
+//             // console.log(req.file);
+//             const uploadParams = {
+//                 Bucket: 'tivappbucket', // pass your bucket name
+//                 Key: 'videos/' + req.file.originalname, // file will be saved as testBucket/contacts.csv
+//                 Body: req.file.buffer,
+//                 ContentType: req.file.mimetype
+//             };
+//             s3.upload (uploadParams, function (err, data) {
+//                 if (err) {
+//                     console.log("Error", err);
+//                 } if (data) {
+//                     connection.query('INSERT INTO post (videourl, userid, topicid, posttype) VALUES ' +
+//                         '(?, ?, ?, ?)', [data.Location, req.user.id, topic, 3], function (error, results, fields) {
+//                         // error will be an Error if one occurred during the query
+//                         // results will contain the results of the query
+//                         // fields will contain information about the returned results fields (if any)
+//                         if (error) {
+//                             throw error;
+//                         }
+//                         req.flash('alert', 'Video created.');
+//                         res.redirect(`/users/${req.user.id}`);
+//                     });
 //                 }
 //             });
 //         }
@@ -906,7 +917,7 @@ router.get('/posts/:id', isResource, function(req, res){
         if (error) {
             throw error;
         }
-        connection.query('SELECT p.id, p.name, p.description, p.imageurl, p.videourl, p.datecreated, p.userid, p.topicid, p.posttype, p.views, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.id = ? ORDER BY p.datecreated DESC LIMIT 10; SELECT c.id, c.description, c.datecreated, c.userid, u.username, u.imageurl FROM comment as c inner join user as u on ' +
+        connection.query('SELECT p.id, p.name, p.description, p.datecreated, p.userid, p.topicid, p.views, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.id = ? ORDER BY p.datecreated DESC LIMIT 10; SELECT c.id, c.description, c.datecreated, c.userid, u.username, u.imageurl FROM comment as c inner join user as u on ' +
             'c.userid = u.id WHERE c.postid = ? ORDER BY c.datecreated DESC LIMIT 10;SELECT count(*) as commentscount FROM comment WHERE postid = ?;SELECT count(*) as likescount FROM likes WHERE liked = ?;', [req.params.id, req.params.id, req.params.id, req.params.id], function (error, results, fields) {
             // error will be an Error if one occurred during the query
             // results will contain the results of the query
