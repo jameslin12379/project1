@@ -9,7 +9,7 @@ const URL = window.location.origin + '/userfollowings';
 const followerscount = document.getElementById('followerscount');
 const button = document.getElementById('followunfollow');
 button.addEventListener('click', function(event){
-    if (button.innerText === 'Follow') {
+    if (button.innerText === 'FOLLOW') {
         followUser();
     } else {
         unfollowUser();
@@ -26,7 +26,7 @@ function followUser(){
         body: JSON.stringify({userid: userid})
     }).then(response => response.json())
         .then(result => {
-            button.innerText = 'Unfollow';
+            button.innerText = 'UNFOLLOW';
             followerscount.innerText = (Number(followerscount.innerText) + 1) + '';
         });
 }
@@ -41,7 +41,7 @@ function unfollowUser(){
         body: JSON.stringify({userid: userid})
     }).then(response => response.json())
         .then(result => {
-            button.innerText = 'Follow';
+            button.innerText = 'FOLLOW';
             followerscount.innerText = (Number(followerscount.innerText) - 1) + '';
 
         });

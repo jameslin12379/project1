@@ -25,7 +25,7 @@ document.addEventListener('scroll', () => {
                     div.classList.add("mb-50");
                     div.classList.add("list-item");
                     const link = document.createElement('a');
-                    link.setAttribute("href", `/topics/${user.id}`);
+                    link.setAttribute("href", `/users/${user.id}`);
                     link.classList.add("mr-15");
                     const img = document.createElement('img');
                     img.setAttribute("src", user.imageurl);

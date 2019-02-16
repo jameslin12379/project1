@@ -63,5 +63,41 @@
 }
 
 .fs-16 {
-    font-size: 16px;
+    font-size: 16px!important;
+}
+
+.fs-18 {
+    font-size: 18px!important;
+}
+
+.pt-150 {
+    padding-top: 150px;
+}
+
+.pb-150 {
+    padding-bottom: 150px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.cr-343a40 {
+    color: #343a40!important;
+}
+
+.bb-none {
+    border-bottom: none;
+}
+
+@media (min-width: 981px) {
+    .vert {
+        display: flex;
+        justify-content: center;
+    }
+
+    .vert > div {
+        margin-bottom: 0!important;
+        margin-right: 15px;
+    }
 }
