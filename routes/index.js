@@ -640,6 +640,152 @@ router.delete('/userfollowings', isAuthenticated, function(req, res) {
     });
 });
 
+/// TOPIC ROUTES ///
+// GET request for list of all Topic items.
+router.get('/topics', function(req, res){
+    connection.query('SELECT * FROM topic ORDER BY name LIMIT 10', function (error, results, fields) {
+        // error will be an Error if one occurred during the query
+        // results will contain the results of the query
+        // fields will contain information about the returned results fields (if any)
+        if (error) {
+            throw error;
+        }
+        res.render('topics/index', {
+            req: req,
+            results: results,
+            title: 'Explore',
+            alert: req.flash('alert')
+        });
+    });
+});
+
+router.get('/api/topics', function(req, res){
+    connection.query('SELECT * FROM topic ORDER BY name LIMIT 10 OFFSET ?;', [Number(req.query.skip)], function (error, results, fields) {
+        // error will be an Error if one occurred during the query
+        // results will contain the results of the query
+        // fields will contain information about the returned results fields (if any)
+        if (error) {
+            throw error;
+        }
+        res.status(200).json({ results: results });
+    });
+});
+
+// get topic information, get 10 images of the topic, if current user is logged in, check if he has
+// followed topic or not if yes pass unfollow to button value else pass follow to button value
+router.get('/topics/:id', isResource, function(req, res){
+    connection.query('SELECT id, name, description, imageurl, datecreated FROM `topic` WHERE id = ?; SELECT p.id, p.name, p.description, p.datecreated, p.userid, p.topicid, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10; SELECT count(*) as postscount ' +
+        'FROM post WHERE topicid = ?;SELECT count(*) as followerscount FROM topicfollowing WHERE followed = ?',
+        [req.params.id, req.params.id, req.params.id, req.params.id],
+        function (error, results, fields) {
+            // error will be an Error if one occurred during the query
+            // results will contain the results of the query
+            // fields will contain information about the returned results fields (if any)
+            if (error) {
+                throw error;
+            }
+            if (req.isAuthenticated()) {
+                connection.query('SELECT count(*) as status FROM topicfollowing WHERE following = ? and followed = ?;', [req.user.id, req.params.id],
+                    function (error, result, fields) {
+                        if (error) {
+                            throw error;
+                        }
+                        res.render('topics/show', {
+                            req: req,
+                            results: results,
+                            title: 'Topic',
+                            result: result,
+                            moment: moment,
+                            alert: req.flash('alert')
+                        });
+                    });
+            } else {
+                console.log(results);
+                res.render('topics/show', {
+                    req: req,
+                    results: results,
+                    title: 'Topic',
+                    moment: moment,
+                    alert: req.flash('alert')
+                });
+            }
+        });
+});
+
+router.get('/api/topics/:id', isResource, function(req, res){
+    connection.query('SELECT p.id, p.name, p.description, p.datecreated, p.userid, p.topicid, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10 OFFSET ?;', [req.params.id, Number(req.query.skip)], function (error, results, fields) {
+        // error will be an Error if one occurred during the query
+        // results will contain the results of the query
+        // fields will contain information about the returned results fields (if any)
+        if (error) {
+            throw error;
+        }
+        res.status(200).json({ results: results });
+    });
+});
+
+/// GET request for topic followers sorted by created date in descending order limit by 10
+router.get('/topics/:id/followers', isResource, function(req, res){
+    connection.query('SELECT id, name, description, imageurl FROM `topic` WHERE id = ?; SELECT u.id, u.username, ' +
+        'u.imageurl from topicfollowing as tf inner join user as u on tf.following = u.id where tf.followed = ? ' +
+        'ORDER BY tf.datecreated DESC LIMIT 10; SELECT count(*) as postscount FROM post WHERE topicid = ?;' +
+        'SELECT count(*) as followerscount FROM topicfollowing WHERE followed = ?',
+        [req.params.id, req.params.id, req.params.id, req.params.id], function (error, results, fields) {
+            // error will be an Error if one occurred during the query
+            // results will contain the results of the query
+            // fields will contain information about the returned results fields (if any)
+            if (error) {
+                throw error;
+            }
+            res.render('topics/followers', {
+                req: req,
+                results: results,
+                title: 'Topic followers',
+                alert: req.flash('alert')
+            });
+        });
+});
+
+router.get('/api/topics/:id/followers', isResource, function(req, res){
+    connection.query('SELECT u.id, u.username, u.imageurl from topicfollowing as tf inner join user as u on tf.following = u.id where tf.followed = ? ORDER BY tf.datecreated DESC LIMIT 10 OFFSET ?', [req.params.id, Number(req.query.skip)], function (error, results, fields) {
+        // error will be an Error if one occurred during the query
+        // results will contain the results of the query
+        // fields will contain information about the returned results fields (if any)
+        if (error) {
+            throw error;
+        }
+        res.status(200).json({ results: results });
+    });
+});
+
+/// TOPICFOLLOWING ROUTES ///
+// POST request for creating Topicfollowing.
+router.post('/topicfollowings', isAuthenticated, function(req, res) {
+    connection.query('INSERT INTO topicfollowing (following, followed) VALUES (?, ?)', [req.user.id, req.body.topicid], function (error, results, fields) {
+        // error will be an Error if one occurred during the query
+        // results will contain the results of the query
+        // fields will contain information about the returned results fields (if any)
+        if (error) {
+            throw error;
+        }
+        // console.log(results);
+        // res.json({tfid: results.insertId});
+        res.json({status: 'done'});
+    });
+});
+
+router.delete('/topicfollowings', isAuthenticated, function(req, res) {
+    connection.query('DELETE FROM topicfollowing WHERE following = ? and followed = ?', [req.user.id, req.body.topicid], function (error, results, fields) {
+        // error will be an Error if one occurred during the query
+        // results will contain the results of the query
+        // fields will contain information about the returned results fields (if any)
+        if (error) {
+            throw error;
+        }
+        res.json({status: 'done'});
+    });
+});
+
 /// POST ROUTES ///
 /// GET request for creating a Post. NOTE This must come before routes that display Post (uses id). ///
 router.get('/posts/new', isAuthenticated, function(req, res){
@@ -973,6 +1119,68 @@ router.get('/api/posts/:id/comments', isResource, function(req, res){
     });
 });
 
+router.get('/posts/:id/edit', isResource, isAuthenticated, isOwnResource, function(req, res){
+    connection.query('SELECT id, name, description, topicid FROM post WHERE id = ?', [req.params.id],
+        function (error, results, fields) {
+            // error will be an Error if one occurred during the query
+            // results will contain the results of the query
+            // fields will contain information about the returned results fields (if any)
+            if (error) {
+                throw error;
+            }
+            // if (results[0].posttype !== 1) {
+            //     res.redirect(`/posts/${req.params.id}`);
+            // }
+            res.render('posts/edit', {
+                req: req,
+                results: results,
+                title: 'Edit post',
+                errors: req.flash('errors'),
+                inputs: req.flash('inputs')
+            });
+        });
+});
+
+router.put('/posts/:id', isResource, isAuthenticated, isOwnResource, [
+    body('name', 'Empty name.').not().isEmpty(),
+    body('description', 'Empty description.').not().isEmpty(),
+    body('topic', 'Empty topic').not().isEmpty(),
+    body('name', 'Name must be between 5-200 characters.').isLength({min:5, max:200}),
+    body('description', 'Description must be between 5-300 characters.').isLength({min:5, max:300})
+], (req, res) => {
+    // check if inputs are valid
+    // if yes then upload picture to S3, get new imageurl, check existing imageurl and if it is not
+    // default picture delete it using link, save imageurl and other fields into DB and if successful
+    // return to user home page
+    const errors = validationResult(req);
+    let errorsarray = errors.array();
+    if (errorsarray.length !== 0) {
+        // There are errors. Render form again with sanitized values/errors messages.
+        // Error messages can be returned in an array using `errors.array()`.
+        req.flash('errors', errorsarray);
+        req.flash('inputs', {name: req.body.name, description: req.body.description, topicid: req.body.topic});
+        res.redirect(req._parsedOriginalUrl.pathname + '/edit');
+    }
+    else {
+        sanitizeBody('name').trim().escape();
+        sanitizeBody('description').trim().escape();
+        sanitizeBody('topic').trim().escape();
+        const name = req.body.name;
+        const description = req.body.description;
+        const topic = req.body.topic;
+        connection.query('UPDATE post SET name = ?, description = ?, topicid = ? WHERE id = ?', [name, description, topic, req.params.id], function (error, results, fields) {
+            // error will be an Error if one occurred during the query
+            // results will contain the results of the query
+            // fields will contain information about the returned results fields (if any)
+            if (error) {
+                throw error;
+            }
+            req.flash('alert', 'Post edited.');
+            res.redirect(req._parsedOriginalUrl.pathname);
+        });
+    }
+});
+
 // GET request to update Post.
 // router.get('/posts/:id/edit', isResource, isAuthenticated, isOwnResource, function(req, res){
 //     connection.query('SELECT id, name, description, imageurl, videourl, topicid, posttype FROM post WHERE id = ?', [req.params.id],
@@ -993,28 +1201,6 @@ router.get('/api/posts/:id/comments', isResource, function(req, res){
 //
 //         });
 // });
-
-router.get('/posts/:id/edit', isResource, isAuthenticated, isOwnResource, function(req, res){
-    connection.query('SELECT id, name, description, imageurl, videourl, topicid, posttype FROM post WHERE id = ?', [req.params.id],
-        function (error, results, fields) {
-            // error will be an Error if one occurred during the query
-            // results will contain the results of the query
-            // fields will contain information about the returned results fields (if any)
-            if (error) {
-                throw error;
-            }
-            if (results[0].posttype !== 1) {
-                res.redirect(`/posts/${req.params.id}`);
-            }
-            res.render('posts/edit', {
-                req: req,
-                results: results,
-                title: 'Edit post',
-                errors: req.flash('errors'),
-                inputs: req.flash('inputs')
-            });
-        });
-});
 
 // PUT request to update Post.
 // router.put('/posts/:id', isResource, isAuthenticated, isOwnResource, upload.single('file'), [
@@ -1092,46 +1278,6 @@ router.get('/posts/:id/edit', isResource, isAuthenticated, isOwnResource, functi
 //         });
 //     }
 // });
-
-router.put('/posts/:id', isResource, isAuthenticated, isOwnResource, [
-    body('name', 'Empty name.').not().isEmpty(),
-    body('description', 'Empty description.').not().isEmpty(),
-    body('topic', 'Empty topic').not().isEmpty(),
-    body('name', 'Name must be between 5-200 characters.').isLength({min:5, max:200}),
-    body('description', 'Description must be between 5-300 characters.').isLength({min:5, max:300})
-], (req, res) => {
-    // check if inputs are valid
-    // if yes then upload picture to S3, get new imageurl, check existing imageurl and if it is not
-    // default picture delete it using link, save imageurl and other fields into DB and if successful
-    // return to user home page
-    const errors = validationResult(req);
-    let errorsarray = errors.array();
-    if (errorsarray.length !== 0) {
-        // There are errors. Render form again with sanitized values/errors messages.
-        // Error messages can be returned in an array using `errors.array()`.
-        req.flash('errors', errorsarray);
-        req.flash('inputs', {name: req.body.name, description: req.body.description, topicid: req.body.topic});
-        res.redirect(req._parsedOriginalUrl.pathname + '/edit');
-    }
-    else {
-        sanitizeBody('name').trim().escape();
-        sanitizeBody('description').trim().escape();
-        sanitizeBody('topic').trim().escape();
-        const name = req.body.name;
-        const description = req.body.description;
-        const topic = req.body.topic;
-        connection.query('UPDATE post SET name = ?, description = ?, topicid = ? WHERE id = ?', [name, description, topic, req.params.id], function (error, results, fields) {
-                    // error will be an Error if one occurred during the query
-                    // results will contain the results of the query
-                    // fields will contain information about the returned results fields (if any)
-                    if (error) {
-                        throw error;
-                    }
-                    req.flash('alert', 'Post edited.');
-                    res.redirect(req._parsedOriginalUrl.pathname);
-                });
-            }
-        });
 
 // DELETE request to delete Post.
 router.delete('/posts/:id', isResource, isAuthenticated, isOwnResource, function(req, res){
@@ -1217,152 +1363,6 @@ router.delete('/comments/:id', isResource, isAuthenticated, isOwnResource, funct
         }
         req.flash('alert', 'Comment deleted.');
         res.redirect(`/users/${req.user.id}`);
-    });
-});
-
-/// TOPIC ROUTES ///
-// GET request for list of all Topic items.
-router.get('/topics', function(req, res){
-    connection.query('SELECT * FROM topic ORDER BY name LIMIT 10', function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
-        if (error) {
-            throw error;
-        }
-        res.render('topics/index', {
-            req: req,
-            results: results,
-            title: 'Explore',
-            alert: req.flash('alert')
-        });
-    });
-});
-
-router.get('/api/topics', function(req, res){
-    connection.query('SELECT * FROM topic ORDER BY name LIMIT 10 OFFSET ?;', [Number(req.query.skip)], function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
-        if (error) {
-            throw error;
-        }
-        res.status(200).json({ results: results });
-    });
-});
-
-// get topic information, get 10 images of the topic, if current user is logged in, check if he has
-// followed topic or not if yes pass unfollow to button value else pass follow to button value
-router.get('/topics/:id', isResource, function(req, res){
-    connection.query('SELECT id, name, description, imageurl, datecreated FROM `topic` WHERE id = ?; SELECT p.id, p.name, p.description, p.datecreated, p.userid, p.topicid, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10; SELECT count(*) as postscount ' +
-        'FROM post WHERE topicid = ?;SELECT count(*) as followerscount FROM topicfollowing WHERE followed = ?',
-        [req.params.id, req.params.id, req.params.id, req.params.id],
-        function (error, results, fields) {
-            // error will be an Error if one occurred during the query
-            // results will contain the results of the query
-            // fields will contain information about the returned results fields (if any)
-            if (error) {
-                throw error;
-            }
-            if (req.isAuthenticated()) {
-                connection.query('SELECT count(*) as status FROM topicfollowing WHERE following = ? and followed = ?;', [req.user.id, req.params.id],
-                    function (error, result, fields) {
-                        if (error) {
-                            throw error;
-                        }
-                        res.render('topics/show', {
-                            req: req,
-                            results: results,
-                            title: 'Topic',
-                            result: result,
-                            moment: moment,
-                            alert: req.flash('alert')
-                        });
-                    });
-            } else {
-                console.log(results);
-                res.render('topics/show', {
-                    req: req,
-                    results: results,
-                    title: 'Topic',
-                    moment: moment,
-                    alert: req.flash('alert')
-                });
-            }
-        });
-});
-
-router.get('/api/topics/:id', isResource, function(req, res){
-    connection.query('SELECT p.id, p.name, p.description, p.datecreated, p.userid, p.topicid, u.username, u.imageurl as userimageurl, t.name as topicname from post as p inner join user as u on p.userid = u.id inner join topic as t on p.topicid = t.id where p.topicid = ? ORDER BY p.datecreated DESC LIMIT 10 OFFSET ?;', [req.params.id, Number(req.query.skip)], function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
-        if (error) {
-            throw error;
-        }
-        res.status(200).json({ results: results });
-    });
-});
-
-/// GET request for topic followers sorted by created date in descending order limit by 10
-router.get('/topics/:id/followers', isResource, function(req, res){
-    connection.query('SELECT id, name, description, imageurl FROM `topic` WHERE id = ?; SELECT u.id, u.username, ' +
-        'u.imageurl from topicfollowing as tf inner join user as u on tf.following = u.id where tf.followed = ? ' +
-        'ORDER BY tf.datecreated DESC LIMIT 10; SELECT count(*) as postscount FROM post WHERE topicid = ?;' +
-        'SELECT count(*) as followerscount FROM topicfollowing WHERE followed = ?',
-        [req.params.id, req.params.id, req.params.id, req.params.id], function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
-        if (error) {
-            throw error;
-        }
-        res.render('topics/followers', {
-            req: req,
-            results: results,
-            title: 'Topic followers',
-            alert: req.flash('alert')
-        });
-    });
-});
-
-router.get('/api/topics/:id/followers', isResource, function(req, res){
-    connection.query('SELECT u.id, u.username, u.imageurl from topicfollowing as tf inner join user as u on tf.following = u.id where tf.followed = ? ORDER BY tf.datecreated DESC LIMIT 10 OFFSET ?', [req.params.id, Number(req.query.skip)], function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
-        if (error) {
-            throw error;
-        }
-        res.status(200).json({ results: results });
-    });
-});
-
-/// TOPICFOLLOWING ROUTES ///
-// POST request for creating Topicfollowing.
-router.post('/topicfollowings', isAuthenticated, function(req, res) {
-    connection.query('INSERT INTO topicfollowing (following, followed) VALUES (?, ?)', [req.user.id, req.body.topicid], function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
-        if (error) {
-            throw error;
-        }
-        // console.log(results);
-        // res.json({tfid: results.insertId});
-        res.json({status: 'done'});
-    });
-});
-
-router.delete('/topicfollowings', isAuthenticated, function(req, res) {
-    connection.query('DELETE FROM topicfollowing WHERE following = ? and followed = ?', [req.user.id, req.body.topicid], function (error, results, fields) {
-        // error will be an Error if one occurred during the query
-        // results will contain the results of the query
-        // fields will contain information about the returned results fields (if any)
-        if (error) {
-            throw error;
-        }
-        res.json({status: 'done'});
     });
 });
 

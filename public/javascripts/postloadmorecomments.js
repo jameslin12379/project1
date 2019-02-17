@@ -6,11 +6,11 @@ if (lastcharacter === '/'){
     url = url.substring(0, url.length-1);
 }
 let postid = url.substring(url.lastIndexOf('/')+1);
-let count = document.getElementsByClassName('container-item').length;
+let count = document.getElementsByClassName('list-item').length;
 let total = Number(document.getElementById('commentscount').innerText);
 let skip = count;
 let loading = false;
-const API_URL = window.location.hostname.includes("dev") ? `https://www.tiv67.com.dev/api/posts/${postid}/comments` : `https://www.tiv67.com/api/posts/${postid}/comments`;
+const API_URL = window.location.hostname.includes("dev") ? `https://www.post67.com.dev/api/posts/${postid}/comments` : `https://www.post67.com/api/posts/${postid}/comments`;
 
 document.addEventListener('scroll', () => {
     const rect = loadMore.getBoundingClientRect();
@@ -22,7 +22,9 @@ document.addEventListener('scroll', () => {
                 result.forEach(comment => {
                     const div = document.createElement('div');
                     div.classList.add("flex");
+                    div.classList.add("ai-c");
                     div.classList.add("mb-50");
+                    div.classList.add("list-item");
                     const div2 = document.createElement('div');
                     div2.classList.add("mr-15");
                     div.appendChild(div2);
@@ -42,20 +44,23 @@ document.addEventListener('scroll', () => {
                     l2.setAttribute("href", `/users/${comment.userid}`);
                     l2.innerText = comment.username;
                     l2.classList.add("bold");
+                    l2.classList.add("fs-16");
                     div4.appendChild(l2);
                     div3.appendChild(div4);
                     const div5 = document.createElement('div');
                     l3 = document.createElement('a');
                     l3.setAttribute("href", `/comments/${comment.id}`);
                     l3.innerText = comment.description;
+                    l3.classList.add("fs-16");
                     div5.appendChild(l3);
                     div3.appendChild(div5);
-                    const div6 = document.createElement('p');
+                    const div6 = document.createElement('div');
                     div6.innerText = moment(comment.datecreated).format('LLL');
+                    div6.classList.add("fs-16");
                     div3.appendChild(div6);
                     container.appendChild(div);
                 });
-                count = document.getElementsByClassName('container-item').length;
+                count = document.getElementsByClassName('list-item').length;
                 skip = count;
                 loading = false;
             });

@@ -17,7 +17,7 @@ let commentformtextarea = document.getElementById('commentformtextarea');
 let commentformerrors = document.getElementsByClassName('commentformerrors');
 let emptyerror = document.getElementById('emptyerror');
 let lengtherror = document.getElementById('lengtherror');
-let commentscount = document.getElementById('commentscount');
+let commentscount = document.getElementsByClassName('commentscount');
 
 
 commentform.addEventListener('submit', (e)=> {
@@ -31,7 +31,6 @@ commentform.addEventListener('submit', (e)=> {
         body: JSON.stringify({description: description, postid: commentformpostid})
     }).then(response => response.json()).then(result => {
             if (!result.status) {
-                console.log('w');
                 for (let i = 0; i < result.errors.length; i++) {
                     if (result.errors[i].msg === "Empty description.") {
                         emptyerror.classList.remove('hidden');
@@ -42,48 +41,52 @@ commentform.addEventListener('submit', (e)=> {
                 }
             }
             else {
-                    commentscount.innerText = (Number(commentscount.innerText) + 1) + '';
+                    for (let i = 0; i < commentscount.length; i++){
+                        commentscount[i].innerText = (Number(commentscount[i].innerText) + 1) + '';
+                    }
+                    // commentscount.innerText = (Number(commentscount.innerText) + 1) + '';
                     emptyerror.classList.add('hidden');
                     lengtherror.classList.add('hidden');
                     commentformtextarea.value = '';
-                const div = document.createElement('div');
-                div.classList.add("flex");
-                div.classList.add("mb-50");
-                div.classList.add("list-item");
-                const div2 = document.createElement('div');
-                div2.classList.add("mr-15");
-                div.appendChild(div2);
-                l1 = document.createElement('a');
-                l1.setAttribute("href", `/users/${result.comment[0].userid}`);
-                i1 = document.createElement('img');
-                i1.setAttribute("src", result.comment[0].imageurl);
-                i1.classList.add('width-60');
-                i1.classList.add('height-60');
-                i1.classList.add('border-radius');
-                l1.appendChild(i1);
-                div2.appendChild(l1);
-                div3 = document.createElement('div');
-                div.appendChild(div3);
-                const div4 = document.createElement('div');
-                l2 = document.createElement('a');
-                l2.setAttribute("href", `/users/${result.comment[0].userid}`);
-                l2.innerText = result.comment[0].username;
-                l2.classList.add("bold");
-                l2.classList.add("fs-16");
-                div4.appendChild(l2);
-                div3.appendChild(div4);
-                const div5 = document.createElement('div');
-                l3 = document.createElement('a');
-                l3.setAttribute("href", `/comments/${result.comment[0].id}`);
-                l3.innerText = result.comment[0].description;
-                l3.classList.add("fs-16");
-                div5.appendChild(l3);
-                div3.appendChild(div5);
-                const div6 = document.createElement('div');
-                div6.innerText = moment(result.comment[0].datecreated).format('LLL');
-                div6.classList.add("fs-16");
-                div3.appendChild(div6);
-                container.insertBefore(div, container.firstChild);
+                    const div = document.createElement('div');
+                    div.classList.add("flex");
+                    div.classList.add("ai-c");
+                    div.classList.add("mb-50");
+                    div.classList.add("list-item");
+                    const div2 = document.createElement('div');
+                    div2.classList.add("mr-15");
+                    div.appendChild(div2);
+                    l1 = document.createElement('a');
+                    l1.setAttribute("href", `/users/${result.comment[0].userid}`);
+                    i1 = document.createElement('img');
+                    i1.setAttribute("src", result.comment[0].imageurl);
+                    i1.classList.add('width-60');
+                    i1.classList.add('height-60');
+                    i1.classList.add('border-radius');
+                    l1.appendChild(i1);
+                    div2.appendChild(l1);
+                    div3 = document.createElement('div');
+                    div.appendChild(div3);
+                    const div4 = document.createElement('div');
+                    l2 = document.createElement('a');
+                    l2.setAttribute("href", `/users/${result.comment[0].userid}`);
+                    l2.innerText = result.comment[0].username;
+                    l2.classList.add("bold");
+                    l2.classList.add("fs-16");
+                    div4.appendChild(l2);
+                    div3.appendChild(div4);
+                    const div5 = document.createElement('div');
+                    l3 = document.createElement('a');
+                    l3.setAttribute("href", `/comments/${result.comment[0].id}`);
+                    l3.innerText = result.comment[0].description;
+                    l3.classList.add("fs-16");
+                    div5.appendChild(l3);
+                    div3.appendChild(div5);
+                    const div6 = document.createElement('div');
+                    div6.innerText = moment(result.comment[0].datecreated).format('LLL');
+                    div6.classList.add("fs-16");
+                    div3.appendChild(div6);
+                    container.insertBefore(div, container.firstChild);
                 }
             });
         });
