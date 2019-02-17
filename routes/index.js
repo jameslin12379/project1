@@ -161,10 +161,9 @@ router.get('/', function(req, res, next) {
                 alert: req.flash('alert')
             });
         }
-        connection.query('SELECT u.id, u.username, ' +
+        connection.query('SELECT t.id, t.name, t.imageurl FROM topicfollowing as tf inner join topic as t on tf.followed = t.id where tf.following = ? ORDER BY tf.datecreated DESC;SELECT u.id, u.username, ' +
             'u.imageurl from userfollowing as uf inner join user as u on uf.followed = u.id where uf.following = ?' +
-            ' ORDER BY uf.datecreated DESC;SELECT t.id, t.name, t.imageurl FROM topicfollowing as tf inner join topic ' +
-            'as t on tf.followed = t.id where tf.following = ? ORDER BY tf.datecreated DESC;', [req.user.id, req.user.id],
+            ' ORDER BY uf.datecreated DESC;', [req.user.id, req.user.id],
             function (error, results, fields) {
                 if (error) {
                     throw error;
@@ -791,7 +790,7 @@ router.delete('/topicfollowings', isAuthenticated, function(req, res) {
 router.get('/posts/new', isAuthenticated, function(req, res){
     res.render('posts/new', {
         req: req,
-        title: 'Post',
+        title: 'Create',
         errors: req.flash('errors'),
         inputs: req.flash('inputs')
     });

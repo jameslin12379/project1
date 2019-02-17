@@ -50,7 +50,6 @@ commentform.addEventListener('submit', (e)=> {
                     commentformtextarea.value = '';
                     const div = document.createElement('div');
                     div.classList.add("flex");
-                    div.classList.add("ai-c");
                     div.classList.add("mb-50");
                     div.classList.add("list-item");
                     const div2 = document.createElement('div');
